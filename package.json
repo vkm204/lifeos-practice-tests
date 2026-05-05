@@ -4,10 +4,8 @@
   "description": "Practice Testing App",
   "private": true,
   "scripts": {
-    "build": "cd react-app && npm run build",
-    "start": "cd backend && node server.js",
-    "dev": "cd backend && nodemon server.js"
-
+    "build": "cd react-app && npm install --legacy-peer-deps && npm run build",
+    "start": "cd backend && node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
