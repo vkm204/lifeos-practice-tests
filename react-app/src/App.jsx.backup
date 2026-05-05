@@ -1,0 +1,285 @@
+import { useState, useEffect } from 'react'
+import './App.css'
+import LoginScreen from './components/LoginScreen'
+import TestTaker from './components/TestTaker'
+import Dashboard from './components/Dashboard'
+import Settings from './components/Settings'
+import StudyResources from './components/StudyResources'
+import { API_URL } from './config'
+
+function App() {
+  const [authenticated, setAuthenticated] = useState(false)
+  const [kid, setKid] = useState(localStorage.getItem('currentKid') || null)
+  const [view, setView] = useState('dashboard')
+  const [currentTest, setCurrentTest] = useState(null)
+  const [questions, setQuestions] = useState([])
+  const [showStudyResources, setShowStudyResources] = useState(false)
+  const [currentQuestion, setCurrentQuestion] = useState(null)
+
+  const [masteryData, setMasteryData] = useState({
+    Vinay: {
+      recentQuestions: JSON.parse(localStorage.getItem('Vinay_recentQuestions')) || [],
+      masteryByCluster: JSON.parse(localStorage.getItem('Vinay_masteryByCluster')) || {},
+      overallMastery: parseFloat(localStorage.getItem('Vinay_overallMastery')) || 0,
+      targetMastery: 100,
+      testsTaken: parseInt(localStorage.getItem('Vinay_testsTaken')) || 0,
+    },
+    Ishaan: {
+      recentQuestions: JSON.parse(localStorage.getItem('Ishaan_recentQuestions')) || [],
+      masteryByCluster: JSON.parse(localStorage.getItem('Ishaan_masteryByCluster')) || {},
+      overallMastery: parseFloat(localStorage.getItem('Ishaan_overallMastery')) || 0,
+      targetMastery: 100,
+      testsTaken: parseInt(localStorage.getItem('Ishaan_testsTaken')) || 0,
+    }
+  })
+
+  const [settings, setSettings] = useState({
+    celebration: 'normal',
+    enableRetry: true,
+    showResources: true
+  })
+
+  useEffect(() => {
+    if (!authenticated) {
+      setKid(null)
+    }
+  }, [authenticated])
+
+  // PASSWORD AUTHENTICATION
+  const handleLogin = (kidName, password) => {
+    const passwords = {
+      Vinay: 'vinay2027',
+      Ishaan: 'ishaan2028'
+    }
+
+    if (passwords[kidName] === password) {
+      setAuthenticated(true)
+      setKid(kidName)
+      localStorage.setItem('currentKid', kidName)
+      return true
+    }
+    return false
+  }
+
+  const handleLogout = () => {
+    setAuthenticated(false)
+    setKid(null)
+    localStorage.removeItem('currentKid')
+  }
+
+  // UPDATE MASTERY DATA
+  const recordQuestion = (questionId, cluster, isCorrect, difficulty) => {
+    if (!kid) return
+
+    const kidData = masteryData[kid]
+    const newQuestion = {
+      id: questionId,
+      cluster: cluster,
+      correct: isCorrect,
+      difficulty: difficulty,
+      timestamp: Date.now()
+    }
+
+    let recentQuestions = [newQuestion, ...kidData.recentQuestions].slice(0, 60)
+    
+    const masteryByCluster = {}
+    recentQuestions.forEach(q => {
+      if (!masteryByCluster[q.cluster]) {
+        masteryByCluster[q.cluster] = { correct: 0, total: 0 }
+      }
+      masteryByCluster[q.cluster].total++
+      if (q.correct) masteryByCluster[q.cluster].correct++
+    })
+
+    const totalCorrect = recentQuestions.filter(q => q.correct).length
+    const overallMastery = Math.round((totalCorrect / recentQuestions.length) * 100)
+
+    const updatedMastery = {
+      ...masteryData,
+      [kid]: {
+        ...kidData,
+        recentQuestions,
+        masteryByCluster,
+        overallMastery
+      }
+    }
+
+    setMasteryData(updatedMastery)
+    saveMasteryData(kid, updatedMastery[kid])
+  }
+
+  const saveMasteryData = (kidName, data) => {
+    localStorage.setItem(`${kidName}_recentQuestions`, JSON.stringify(data.recentQuestions))
+    localStorage.setItem(`${kidName}_masteryByCluster`, JSON.stringify(data.masteryByCluster))
+    localStorage.setItem(`${kidName}_overallMastery`, data.overallMastery)
+    localStorage.setItem(`${kidName}_testsTaken`, data.testsTaken + 1)
+  }
+
+  // LOAD QUESTIONS FROM BACKEND
+  const loadQuestions = async (subject, numQuestions) => {
+    try {
+      const response = await fetch(`${API_URL}/api/questions/${subject}?kidId=${kid}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load questions: ${response.statusText}`)
+      }
+      
+      const allQuestions = await response.json()
+      
+      // Randomly select numQuestions from the available questions
+      const selectedQuestions = allQuestions
+        .sort(() => Math.random() - 0.5)
+        .slice(0, numQuestions)
+        .map(q => ({
+          id: q.id,
+          subject: q.subject,
+          cluster: q.cluster,
+          difficulty: q.difficulty,
+          question: q.question,
+          type: 'multiple_choice',
+          options: [q.optionA, q.optionB, q.optionC, q.optionD],
+          correctAnswer: q.correctAnswer,
+          hint: q.hint,
+          resources: {
+            khan: 'https://www.khanacademy.org/math/algebra2',
+            topic: q.topic,
+            concept: q.concept
+          }
+        }))
+
+      setQuestions(selectedQuestions)
+      setCurrentTest({
+        subject: subject,
+        questions: selectedQuestions,
+        currentQuestionIndex: 0,
+        answers: {},
+        startTime: new Date(),
+        correctCount: 0
+      })
+      setView('test')
+    } catch (error) {
+      console.error('Error loading questions:', error)
+      alert(`Error loading questions: ${error.message}`)
+    }
+  }
+
+  const handleSubmitAnswer = (questionId, answer, isCorrect) => {
+    const question = questions.find(q => q.id === questionId)
+    if (!question) return
+
+    const updatedTest = { ...currentTest }
+    updatedTest.answers[questionId] = answer
+    
+    if (isCorrect) {
+      updatedTest.correctCount = (updatedTest.correctCount || 0) + 1
+    } else {
+      if (settings.showResources) {
+        setCurrentQuestion(question)
+        setShowStudyResources(true)
+      }
+    }
+
+    recordQuestion(questionId, question.cluster, isCorrect, question.difficulty)
+    setCurrentTest(updatedTest)
+  }
+
+  const handleFinishTest = async () => {
+    const score = Math.round((currentTest.correctCount / currentTest.questions.length) * 100)
+    
+    // Save score to backend
+    try {
+      await fetch(`${API_URL}/api/saveScore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kidId: kid,
+          subject: currentTest.subject,
+          score: score,
+          correct: currentTest.correctCount,
+          total: currentTest.questions.length
+        })
+      })
+    } catch (error) {
+      console.error('Error saving score:', error)
+    }
+
+    alert(`Test complete! Score: ${score}%\n\nYour current mastery: ${masteryData[kid].overallMastery}%\nGoal: ${masteryData[kid].targetMastery}%`)
+    setView('dashboard')
+    setCurrentTest(null)
+  }
+
+  // LOGIN SCREEN
+  if (!authenticated) {
+    return <LoginScreen onLogin={handleLogin} />
+  }
+
+  return (
+    <div className="App">
+      <header className="app-header">
+        <div className="header-left">
+          <h1>🚀 LifeOS Practice</h1>
+          <span className="kid-name">{kid}'s Workspace</span>
+        </div>
+
+        <div className="header-nav">
+          <button 
+            className={view === 'dashboard' ? 'active' : ''}
+            onClick={() => setView('dashboard')}
+          >
+            Dashboard
+          </button>
+          <button 
+            className={view === 'settings' ? 'active' : ''}
+            onClick={() => setView('settings')}
+          >
+            Settings
+          </button>
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <main className="app-main">
+        {view === 'dashboard' && (
+          <Dashboard 
+            kid={kid} 
+            masteryData={masteryData[kid]}
+            onStartTest={loadQuestions}
+          />
+        )}
+
+        {view === 'test' && currentTest && (
+          <TestTaker
+            test={currentTest}
+            kid={kid}
+            settings={settings}
+            masteryData={masteryData[kid]}
+            onSubmitAnswer={handleSubmitAnswer}
+            onFinish={handleFinishTest}
+          />
+        )}
+
+        {view === 'settings' && (
+          <Settings 
+            settings={settings}
+            onSave={(newSettings) => setSettings(newSettings)}
+          />
+        )}
+      </main>
+
+      {showStudyResources && currentQuestion && (
+        <StudyResources 
+          question={currentQuestion}
+          onClose={() => setShowStudyResources(false)}
+        />
+      )}
+
+      <footer className="app-footer">
+        <p>Master one concept at a time. You've got this! 💪</p>
+      </footer>
+    </div>
+  )
+}
+
+export default App

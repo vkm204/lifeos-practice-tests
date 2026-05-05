@@ -1,0 +1,138 @@
+import { useState, useEffect } from 'react'
+import './TestTaker.css'
+
+function TestTaker({ test, kid, settings, masteryData, onSubmitAnswer, onFinish }) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState('')
+  const [timeLeft, setTimeLeft] = useState(test.questions.length * 90) // 90 seconds per question
+  const [testSubmitted, setTestSubmitted] = useState(false)
+
+  // Timer countdown
+  useEffect(() => {
+    if (testSubmitted) return
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          handleFinishTest() // Auto-submit when time runs out
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [testSubmitted])
+
+  if (!test || !test.questions || test.questions.length === 0) {
+    return <div className="test-taker">Loading questions...</div>
+  }
+
+  const currentQuestion = test.questions[currentIndex]
+  if (!currentQuestion) {
+    return <div className="test-taker">No questions available</div>
+  }
+
+  const handleSelectAnswer = (optionIndex) => {
+    setSelectedAnswer(optionIndex.toString())
+  }
+
+  const handleSubmitAnswer = () => {
+    if (!selectedAnswer) return
+
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer
+    
+    // Record answer
+    onSubmitAnswer(currentQuestion.id, selectedAnswer, isCorrect)
+
+    // Move to next question or finish
+    if (currentIndex < test.questions.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+      setSelectedAnswer('')
+    } else {
+      handleFinishTest()
+    }
+  }
+
+  const handleFinishTest = () => {
+    setTestSubmitted(true)
+    onFinish()
+  }
+
+  const handleSkipQuestion = () => {
+    // Mark as unanswered and move on
+    onSubmitAnswer(currentQuestion.id, '', false)
+    
+    if (currentIndex < test.questions.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+      setSelectedAnswer('')
+    } else {
+      handleFinishTest()
+    }
+  }
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const progressPercent = ((currentIndex + 1) / test.questions.length) * 100
+  const isTimeRunningOut = timeLeft < 60
+
+  return (
+    <div className="test-taker">
+      <div className="test-header">
+        <div className="test-info">
+          <h2>{test.subject} Test</h2>
+          <p>Question {currentIndex + 1} of {test.questions.length}</p>
+        </div>
+        <div className="test-timer">
+          <span className={`timer ${isTimeRunningOut ? 'warning' : ''}`}>
+            ⏱️ {formatTime(timeLeft)}
+          </span>
+        </div>
+      </div>
+
+      <div className="progress-container">
+        <div className="progress-bar" style={{ width: `${progressPercent}%` }}></div>
+      </div>
+
+      <div className="question-area">
+        <div className="question-box">
+          <h3>{currentQuestion.question}</h3>
+        </div>
+
+        <div className="options">
+          {currentQuestion.options.map((option, index) => (
+            <button
+              key={index}
+              className={`option ${selectedAnswer === index.toString() ? 'selected' : ''}`}
+              onClick={() => handleSelectAnswer(index)}
+            >
+              <span className="option-letter">{String.fromCharCode(65 + index)}.</span>
+              <span className="option-text">{option}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="test-actions">
+          {selectedAnswer && (
+            <button className="btn-submit-answer" onClick={handleSubmitAnswer}>
+              {currentIndex === test.questions.length - 1 ? 'Submit Test' : 'Next Question →'}
+            </button>
+          )}
+          <button className="btn-skip" onClick={handleSkipQuestion}>
+            {currentIndex === test.questions.length - 1 ? 'Finish Without Answer' : 'Skip Question'}
+          </button>
+        </div>
+
+        <div className="test-instructions">
+          <p>📌 <strong>No retries allowed.</strong> Once you move forward, you cannot go back. Answer carefully!</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default TestTaker

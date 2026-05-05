@@ -1,10 +1,4 @@
 {
-  "buildCommand": "cd react-app && bash build.sh",
-  "outputDirectory": "react-app/dist",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "buildCommand": "npm --prefix=react-app install --legacy-peer-deps && npm --prefix=react-app run build",
+  "outputDirectory": "react-app/dist"
 }

@@ -1,0 +1,165 @@
+import { useState } from 'react'
+import "./Dashboard.css"
+
+function Dashboard({ kid, masteryData, onStartTest }) {
+  const [subject, setSubject] = useState('ALG2')
+  const [numQuestions, setNumQuestions] = useState(10)
+
+  if (!masteryData) {
+    return <div className="dashboard-loading">Loading your data...</div>
+  }
+
+  const {
+    recentQuestions,
+    masteryByCluster,
+    overallMastery,
+    targetMastery,
+    testsTaken
+  } = masteryData
+
+  // Calculate mastery progress
+  const masteryGap = targetMastery - overallMastery
+  const progressTowardGoal = Math.round(((overallMastery - 0) / targetMastery) * 100)
+
+  // Get clusters in need of improvement
+  const clustersByNeed = Object.entries(masteryByCluster)
+    .map(([cluster, data]) => ({
+      cluster,
+      mastery: Math.round((data.correct / data.total) * 100),
+      total: data.total
+    }))
+    .sort((a, b) => a.mastery - b.mastery)
+
+  const subjects = ['ALG2', 'SAT_MATH', 'SAT_VERBAL']
+
+  const handleStartTest = () => {
+    onStartTest(subject, numQuestions)
+  }
+
+  return (
+    <div className="dashboard">
+      <div className="welcome-card">
+        <h2>Welcome back, {kid}! 👋</h2>
+        <p>You've answered <strong>{recentQuestions.length}</strong> questions in your recent history</p>
+      </div>
+
+      {/* MASTERY PROGRESS */}
+      <div className="mastery-section">
+        <h3>📊 Your Mastery Progress</h3>
+        <div className="mastery-card">
+          <div className="mastery-display">
+            <div className="mastery-circle">
+              <div className="mastery-percent">{overallMastery}%</div>
+              <div className="mastery-goal">Goal: {targetMastery}%</div>
+            </div>
+            <div className="mastery-info">
+              <p className="mastery-description">
+                Based on your last <strong>{recentQuestions.length}</strong> questions
+              </p>
+              <p className="mastery-gap">
+                {masteryGap > 0 ? (
+                  <>You need <strong>{masteryGap}%</strong> more to reach your goal!</>
+                ) : (
+                  <>Congratulations! You've reached your goal! 🎉</>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="mastery-bar-container">
+            <div className="mastery-bar">
+              <div 
+                className="mastery-fill" 
+                style={{ 
+                  width: `${Math.min(overallMastery, 100)}%`,
+                  background: overallMastery >= targetMastery 
+                    ? 'linear-gradient(90deg, #22C55E, #10B981)' 
+                    : 'linear-gradient(90deg, #2E7D6F, #4A9F93)'
+                }}
+              ></div>
+            </div>
+            <p className="bar-label">Progress: {progressTowardGoal}% toward goal</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CLUSTER MASTERY */}
+      {clustersByNeed.length > 0 && (
+        <div className="cluster-section">
+          <h3>📈 By Topic</h3>
+          <div className="cluster-grid">
+            {clustersByNeed.map(({ cluster, mastery, total }) => (
+              <div key={cluster} className="cluster-card">
+                <div className="cluster-header">
+                  <h4>{cluster}</h4>
+                  <span className="cluster-mastery">{mastery}%</span>
+                </div>
+                <div className="cluster-bar">
+                  <div 
+                    className="cluster-fill"
+                    style={{ width: `${mastery}%` }}
+                  ></div>
+                </div>
+                <p className="cluster-detail">{total} questions answered</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* START TEST */}
+      <div className="start-test-section">
+        <h3>🎯 Practice Now</h3>
+        
+        <div className="form-group">
+          <label htmlFor="subject">Subject</label>
+          <select 
+            id="subject"
+            value={subject} 
+            onChange={(e) => setSubject(e.target.value)}
+          >
+            {subjects.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="numQuestions">Number of Questions</label>
+          <input 
+            id="numQuestions"
+            type="number" 
+            min="1" 
+            max="20" 
+            value={numQuestions}
+            onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+          />
+        </div>
+
+        <button className="btn-start-test" onClick={handleStartTest}>
+          Start Test
+        </button>
+      </div>
+
+      {/* STATS */}
+      <div className="stats-section">
+        <div className="stat-card">
+          <span className="stat-icon">📝</span>
+          <div>
+            <p className="stat-label">Tests Taken</p>
+            <p className="stat-value">{testsTaken}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-icon">✅</span>
+          <div>
+            <p className="stat-label">Correct Answers</p>
+            <p className="stat-value">{recentQuestions.filter(q => q.correct).length}/{recentQuestions.length}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Dashboard

@@ -1,0 +1,203 @@
+.study-resources-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.study-resources {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.resources-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+.resources-header h3 {
+  font-size: 1.25rem;
+  color: #111827;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* TABS */
+.resources-tabs {
+  display: flex;
+  border-bottom: 1px solid #E5E7EB;
+  background: #F9FAFB;
+  padding: 0 1.5rem;
+  gap: 0.5rem;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #333;
+}
+
+.tab.active {
+  color: #2E7D6F;
+  border-bottom-color: #2E7D6F;
+}
+
+/* TAB CONTENT */
+.tab-content {
+  padding: 1.5rem;
+}
+
+.resource-item h4 {
+  font-size: 1.1rem;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.concept-text {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.btn-learn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #2E7D6F, #1B5E55);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.btn-learn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 125, 111, 0.3);
+}
+
+.resource-note {
+  background: #F0FDF4;
+  padding: 0.75rem;
+  border-radius: 6px;
+  color: #166534;
+  font-size: 0.9rem;
+  border-left: 3px solid #22C55E;
+  margin-top: 1rem;
+}
+
+/* CONCEPT CARDS */
+.concept-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.concept-card {
+  background: #F9FAFB;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #2E7D6F;
+  transition: all 0.2s;
+}
+
+.concept-card:hover {
+  background: #F3F4F6;
+  transform: translateX(4px);
+}
+
+.concept-card h5 {
+  font-size: 1rem;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.concept-card p {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* FOOTER */
+.resources-footer {
+  padding: 1rem 1.5rem;
+  background: #F0FDF4;
+  border-top: 1px solid #E5E7EB;
+  font-size: 0.9rem;
+  color: #166534;
+}
+
+.resources-footer p {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .study-resources {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .resources-header {
+    padding: 1rem;
+  }
+
+  .tab-content {
+    padding: 1rem;
+  }
+}
