@@ -1,4 +1,5 @@
 {
-  "buildCommand": "cd react-app && npm install && npm run build && cd .. && cp -r react-app/dist .",
-  "outputDirectory": "dist"
+  "buildCommand": "cd react-app && npm install && npm run build",
+  "outputDirectory": "react-app/dist",
+  "public": "react-app/dist"
 }
