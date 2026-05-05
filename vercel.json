@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npm --prefix=react-app install --legacy-peer-deps && npm --prefix=react-app run build",
+  "buildCommand": "cd react-app && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "react-app/dist"
 }
