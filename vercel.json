@@ -1,4 +1,0 @@
-{
-  "buildCommand": "cd react-app && bash build.sh",
-  "outputDirectory": "react-app/dist"
-}
