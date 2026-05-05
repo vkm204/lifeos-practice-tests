@@ -5,7 +5,7 @@ const isDevelopment = process.env.NODE_ENV === 'development'
 
 export const API_URL = isDevelopment 
   ? 'http://localhost:5000'
-  : 'https://your-backend-on-railway.app' // Update after deploying to Railway
+  : 'export const API_URL = 'https://lifeos-practice-tests-production.up.railway.app'' // Update after deploying to Railway
 
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your_client_id'
 
